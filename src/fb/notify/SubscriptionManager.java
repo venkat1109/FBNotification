@@ -1,6 +1,5 @@
 package fb.notify;
 
-import org.apache.http.StatusLine;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.message.BasicNameValuePair;
@@ -11,10 +10,11 @@ import org.apache.http.client.entity.UrlEncodedFormEntity;
 
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpDelete;
 
 import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.DefaultHttpClient;
+
+import org.apache.http.util.EntityUtils;
 
 import org.apache.http.protocol.HTTP;
 
@@ -72,6 +72,8 @@ public class SubscriptionManager {
 
             System.out.println("Got response for subscription:" + response);
 
+            EntityUtils.consume(response.getEntity());
+
         } catch(Exception e) {
             throw new RuntimeException("Error adding subscription:", e);
         }
@@ -107,18 +109,23 @@ public class SubscriptionManager {
 
         try {
 
-            String deleteUri = BASE_URI + "/" + appId + "/" + API_NAME ;
-
-            //deleteUri = appendHttpParameter(deleteUri, "access_token", URLEncoder.encode(ACCESS_TOKEN, "UTF-8"));
-
-            if(object != null) {
-                deleteUri = appendHttpParameter(deleteUri, "&object", object);
-            }
+            String deleteUri = BASE_URI + "/" + appId + "/" + API_NAME ;                                      
             
             System.out.println("Sending delete request " + deleteUri);
+
+            HttpPost postReq          = new HttpPost(deleteUri);
+            List <NameValuePair> nvps = new ArrayList <NameValuePair>();
+
+            nvps.add(new BasicNameValuePair("method",       "delete"));
+            nvps.add(new BasicNameValuePair("access_token", ACCESS_TOKEN));
+
+            if(object != null) {
+                nvps.add(new BasicNameValuePair("object", object));
+            }
+
+            postReq.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8));
             
-            HttpDelete getRequest = new HttpDelete(deleteUri);
-            HttpResponse response = httpClient.execute(getRequest);
+            HttpResponse response = httpClient.execute(postReq);
 
             System.out.println("Response for delete:" + response.getStatusLine());
 
@@ -138,7 +145,7 @@ public class SubscriptionManager {
         SubscriptionManager manager = new SubscriptionManager();
 
         System.out.println("Subscribing...");
-        //manager.add("100002817666087", "user", "feed,likes", "http://vsrinivasan.dyndns-home.com:8766");
+        manager.add("100002817666087", "user", "feed,likes", "http://vsrinivasan.dyndns-home.com:8766");
 
         String response = manager.list("100002817666087");
 
